@@ -13,7 +13,7 @@ const ParticipantInput = ({ participants, onAdd, onRemove }) => {
 
   return (
     <div className="glass-card">
-      <h2>The Naughty List</h2>
+      <h2 style={{ textAlign: "center" }}>The Naughty List</h2>
       <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.5rem" }}>
         <input
           type="text"
