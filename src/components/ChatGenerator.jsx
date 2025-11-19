@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import OpenAI from "openai";
 import { templates, items } from "../data/templates";
 
 const ChatGenerator = ({ participants, onGenerate }) => {
@@ -14,40 +13,25 @@ const ChatGenerator = ({ participants, onGenerate }) => {
     setIsLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      // Call backend API instead of OpenAI directly
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ participants }),
+      });
 
-      if (!apiKey) {
-        throw new Error("No API Key found");
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
 
-      const openai = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true, // Required for client-side usage
-      });
-
-      const completion = await openai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a paranoid, chaotic AI generating anonymous messages for a Secret Santa group chat. Your goal is to sow distrust and confusion in a funny way. Keep it short (under 150 chars). Mention specific names from the list provided.",
-          },
-          {
-            role: "user",
-            content: `Participants: ${participants.join(
-              ", "
-            )}. Generate one suspicious message accusing someone of something related to Christmas gifts, food, or traditions.`,
-          },
-        ],
-        model: "gpt-4o",
-      });
-
-      const message = completion.choices[0].message.content;
+      const data = await response.json();
       const timestamp = new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
-      onGenerate({ text: message, timestamp });
+      onGenerate({ text: data.message, timestamp });
     } catch (error) {
       console.warn("AI Generation failed, falling back to templates:", error);
       // Fallback logic
