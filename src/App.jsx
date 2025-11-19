@@ -80,7 +80,19 @@ function App() {
           fontSize: "0.9rem",
         }}
       >
-        Built with ❄️ and ☕ by Antigravity
+        Built with ❄️ and ☕ by Antigravity <br />
+        <a
+          href="https://github.com/k1lgor/secret-santa-paranoia"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ marginLeft: "0.5rem" }}
+        >
+          <img
+            src="https://cdn.jsdelivr.net/npm/simple-icons@v5/icons/github.svg"
+            alt="GitHub"
+            style={{ height: "1.2em", verticalAlign: "middle" }}
+          />
+        </a>
       </footer>
     </>
   );
