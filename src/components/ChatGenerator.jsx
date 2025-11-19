@@ -14,13 +14,16 @@ const ChatGenerator = ({ participants, onGenerate }) => {
 
     try {
       // Call backend API instead of OpenAI directly
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ participants }),
-      });
+      const response = await fetch(
+        "https://secret-santa-paranoia.vercel.app/api/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ participants }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
