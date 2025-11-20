@@ -1,11 +1,22 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const MessageDisplay = ({ messages }) => {
   const bottomRef = useRef(null);
+  const [copiedIndex, setCopiedIndex] = useState(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleCopy = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
 
   if (messages.length === 0) return null;
 
@@ -43,11 +54,41 @@ const MessageDisplay = ({ messages }) => {
                 borderBottomRightRadius: index % 2 === 0 ? "18px" : "4px",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
                 position: "relative",
+                paddingRight: "2.5rem", // Make room for the button
               }}
             >
               <div style={{ fontSize: "1rem", lineHeight: "1.4" }}>
                 {msg.text}
               </div>
+              <button
+                onClick={() => handleCopy(msg.text, index)}
+                title="Copy to clipboard"
+                style={{
+                  position: "absolute",
+                  top: "0.5rem",
+                  right: "0.5rem",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color:
+                    index % 2 === 0
+                      ? "rgba(0,0,0,0.4)"
+                      : "rgba(255,255,255,0.6)",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+              >
+                {copiedIndex === index ? (
+                  <span style={{ fontSize: "1.2rem" }}>✅</span>
+                ) : (
+                  <span style={{ fontSize: "1.2rem" }}>📋</span>
+                )}
+              </button>
             </div>
             <div
               style={{
