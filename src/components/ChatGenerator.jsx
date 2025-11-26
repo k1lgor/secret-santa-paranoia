@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { templates, items } from "../data/templates";
 
-const ChatGenerator = ({ participants, onGenerate }) => {
+const ChatGenerator = ({ participants, onGenerate, messages }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const generateMessage = async () => {
@@ -13,6 +13,12 @@ const ChatGenerator = ({ participants, onGenerate }) => {
     setIsLoading(true);
 
     try {
+      // Get last 10 messages for context
+      const previousMessages = messages.slice(-10).map((m) => ({
+        sender: m.sender || "Anonymous Elf",
+        text: m.text,
+      }));
+
       // Call backend API instead of OpenAI directly
       const response = await fetch(
         "https://secret-santa-paranoia.vercel.app/api/generate",
@@ -21,7 +27,7 @@ const ChatGenerator = ({ participants, onGenerate }) => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ participants }),
+          body: JSON.stringify({ participants, previousMessages }),
         }
       );
 
@@ -34,7 +40,13 @@ const ChatGenerator = ({ participants, onGenerate }) => {
         hour: "2-digit",
         minute: "2-digit",
       });
-      onGenerate({ text: data.message, timestamp });
+
+      // Handle structured JSON response
+      onGenerate({
+        text: data.text || data.message, // Fallback for old API response
+        sender: data.sender || "Anonymous Elf",
+        timestamp,
+      });
     } catch (error) {
       console.warn("AI Generation failed, falling back to templates:", error);
       // Fallback logic

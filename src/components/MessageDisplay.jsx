@@ -99,7 +99,7 @@ const MessageDisplay = ({ messages }) => {
                 padding: "0 0.5rem",
               }}
             >
-              {msg.timestamp} • Anonymous Elf
+              {msg.timestamp} • {msg.sender || "Anonymous Elf"}
             </div>
           </div>
         ))}

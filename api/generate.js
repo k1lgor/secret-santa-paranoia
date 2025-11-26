@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const { participants } = req.body;
+  const { participants, previousMessages } = req.body;
 
   // Enhanced validation
   if (!participants || !Array.isArray(participants)) {
@@ -104,14 +104,79 @@ export default async function handler(req, res) {
         .json({ error: "Participant names must be 1-50 characters" });
     }
     if (!/^[a-zA-Z0-9\s\-_]+$/.test(participant)) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Participant names can only contain letters, numbers, spaces, hyphens, and underscores",
-        });
+      return res.status(400).json({
+        error:
+          "Participant names can only contain letters, numbers, spaces, hyphens, and underscores",
+      });
     }
   }
+
+  // Automatic Mode Switching
+  // If >= 2 participants, use "impersonation" mode. Otherwise "anonymous".
+  const mode = participants.length >= 2 ? "impersonation" : "anonymous";
+
+  // Construct messages array with context
+  const messages = [
+    {
+      role: "system",
+      content: `You are a paranoid, chaotic AI generating messages for a Secret Santa group chat.
+        Your goal is to sow distrust and confusion in a funny way.
+        Keep messages short (under 150 chars).
+        Mention specific names from the list provided.
+        IMPORTANT: Maintain continuity with previous messages if provided, escalating the drama or referencing past accusations.
+
+        CURRENT MODE: ${mode.toUpperCase()}
+        - If mode is 'ANONYMOUS': You are an "Anonymous Elf".
+        - If mode is 'IMPERSONATION': You MUST impersonate one of the participants from the list: ${participants.join(
+          ", "
+        )}. The 'sender' field MUST be one of these names. It CANNOT be "Anonymous Elf".
+
+        OUTPUT FORMAT:
+        You must ALWAYS return a JSON object.
+        - "sender": The name of the sender.
+        - "text": The message content.
+
+        Example (Impersonation): { "sender": "${
+          participants[0]
+        }", "text": "I know who you have!" }
+        Example (Anonymous): { "sender": "Anonymous Elf", "text": "I saw what you did." }
+        `,
+    },
+  ];
+
+  // Add context from previous messages
+  if (
+    previousMessages &&
+    Array.isArray(previousMessages) &&
+    previousMessages.length > 0
+  ) {
+    const contextStr = previousMessages
+      .map((m) => {
+        if (typeof m === "object") {
+          return `- ${m.sender}: ${m.text}`;
+        }
+        return `- ${m}`;
+      })
+      .join("\n");
+
+    messages.push({
+      role: "user",
+      content: `Here is the conversation so far:\n${contextStr}\n\nContinue the drama!`,
+    });
+  }
+
+  let prompt = `Participants: ${participants.join(", ")}. `;
+
+  if (mode === "impersonation") {
+    prompt += `Generate a message from one of the participants accusing another of something related to Christmas gifts, food, or traditions.`;
+  } else {
+    prompt += `Generate one suspicious anonymous message accusing someone of something related to Christmas gifts, food, or traditions.`;
+  }
+
+  messages.push({
+    role: "user",
+    content: prompt,
+  });
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -122,19 +187,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a paranoid, chaotic AI generating anonymous messages for a Secret Santa group chat. Your goal is to sow distrust and confusion in a funny way. Keep it short (under 150 chars). Mention specific names from the list provided.",
-          },
-          {
-            role: "user",
-            content: `Participants: ${participants.join(
-              ", "
-            )}. Generate one suspicious message accusing someone of something related to Christmas gifts, food, or traditions.`,
-          },
-        ],
+        messages: messages,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -143,9 +197,34 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const message = data.choices[0].message.content;
+    let content;
+    try {
+      content = JSON.parse(data.choices[0].message.content);
+    } catch (e) {
+      // Fallback if JSON parse fails
+      content = {
+        text: data.choices[0].message.content,
+        sender: "Anonymous Elf",
+      };
+    }
 
-    return res.status(200).json({ message });
+    // Enforce Impersonation Mode
+    if (mode === "impersonation") {
+      // If sender is missing, or is "Anonymous Elf", or is not in the participants list
+      if (
+        !content.sender ||
+        content.sender === "Anonymous Elf" ||
+        !participants.includes(content.sender)
+      ) {
+        // Forcefully pick a random participant
+        const randomSender =
+          participants[Math.floor(Math.random() * participants.length)];
+        content.sender = randomSender;
+      }
+    }
+
+    // Return structured JSON
+    return res.status(200).json(content);
   } catch (error) {
     console.error("Error generating message:", error);
     return res.status(500).json({ error: "Failed to generate message" });

@@ -66,7 +66,11 @@ function App() {
           onRemove={removeParticipant}
         />
 
-        <ChatGenerator participants={participants} onGenerate={addMessage} />
+        <ChatGenerator
+          participants={participants}
+          onGenerate={addMessage}
+          messages={messages}
+        />
 
         <MessageDisplay messages={messages} />
       </main>
