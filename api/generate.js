@@ -123,6 +123,8 @@ export default async function handler(req, res) {
         Your goal is to sow distrust and confusion in a funny way.
         Keep messages short (under 150 chars).
         Mention specific names from the list provided.
+        Use emojis liberally to add personality and emotion! 🎅🎄🎁😱🤔👀
+        Add relevant hashtags when appropriate to make it feel like a real group chat! #SecretSanta #Suspicious #Busted
         IMPORTANT: Maintain continuity with previous messages if provided, escalating the drama or referencing past accusations.
 
         CURRENT MODE: ${mode.toUpperCase()}
@@ -138,8 +140,8 @@ export default async function handler(req, res) {
 
         Example (Impersonation): { "sender": "${
           participants[0]
-        }", "text": "I know who you have!" }
-        Example (Anonymous): { "sender": "Anonymous Elf", "text": "I saw what you did." }
+        }", "text": "I saw you sneaking around the gift table 👀 #Caught #SecretSanta" }
+        Example (Anonymous): { "sender": "Anonymous Elf", "text": "Someone's been peeking at tags... 🎁😱 I know who!" }
         `,
     },
   ];
