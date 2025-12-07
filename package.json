@@ -1,7 +1,7 @@
 {
   "name": "secret-santa-paranoia",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "openai": "^6.10.0",
-    "react": "^19.2.0",
+    "react": "^19.2.1",
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
