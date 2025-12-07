@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const { participants, previousMessages } = req.body;
+  const { participants, previousMessages, scenario } = req.body;
 
   // Enhanced validation
   if (!participants || !Array.isArray(participants)) {
@@ -125,7 +125,14 @@ export default async function handler(req, res) {
         Mention specific names from the list provided.
         Use emojis liberally to add personality and emotion! 🎅🎄🎁😱🤔👀
         Add relevant hashtags when appropriate to make it feel like a real group chat! #SecretSanta #Suspicious #Busted
-        IMPORTANT: Maintain continuity with previous messages if provided, escalating the drama or referencing past accusations.
+
+        SCENARIO: ${scenario || "General Holiday Chaos"}
+
+        IMPORTANT: Maintain continuity with previous messages.
+        RESPONSE STRATEGY:
+        1. IF you are replying to an accusation: You MUST DENY it indignantly first. ("Me? Never!", "That's a lie!", "I was in the kitchen!")
+        2. THEN, turn the tables and accuse someone else or the accuser. ("You're the one with chocolate on your face!", "I saw YOU near the tree!")
+        3. DO NOT just ask questions. Make statements. Be defensive and dramatic.
 
         CURRENT MODE: ${mode.toUpperCase()}
         - If mode is 'ANONYMOUS': You are an "Anonymous Elf".
@@ -140,8 +147,10 @@ export default async function handler(req, res) {
 
         Example (Impersonation): { "sender": "${
           participants[0]
-        }", "text": "I saw you sneaking around the gift table 👀 #Caught #SecretSanta" }
-        Example (Anonymous): { "sender": "Anonymous Elf", "text": "Someone's been peeking at tags... 🎁😱 I know who!" }
+        }", "text": "Me?? No way! 😤 I saw ${
+        participants[1]
+      } hiding the presents! 🎁👀 #Innocent #ItWasThem" }
+        Example (Anonymous): { "sender": "Anonymous Elf", "text": "Everyone is acting innocent... but I know who ate the cookies. 🍪😱" }
         `,
     },
   ];
@@ -169,10 +178,38 @@ export default async function handler(req, res) {
 
   let prompt = `Participants: ${participants.join(", ")}. `;
 
-  if (mode === "impersonation") {
-    prompt += `Generate a message from one of the participants accusing another of something related to Christmas gifts, food, or traditions.`;
+  if (previousMessages && previousMessages.length > 0) {
+    const lastMsg = previousMessages[previousMessages.length - 1];
+    const lastSender = typeof lastMsg === "object" ? lastMsg.sender : "Someone";
+    const lastText = typeof lastMsg === "object" ? lastMsg.text : lastMsg;
+
+    // Filter out the last sender to avoid self-replying if possible
+    const potentialResponders = participants.filter((p) => p !== lastSender);
+    // If everyone is filtered out (e.g. 1 participant playing with themselves?), fallback to all
+    const responders =
+      potentialResponders.length > 0 ? potentialResponders : participants;
+
+    const currentResponder =
+      responders[Math.floor(Math.random() * responders.length)];
+
+    prompt += `
+    LAST MESSAGE from ${lastSender}: "${lastText}"
+
+    INSTRUCTION:
+    1. You are now roleplaying as: ${currentResponder}.
+    2. You MUST reply to ${lastSender}.
+    3. FIRST, indignantly DENY the accusation in their message. (e.g. "I did NOT do that!", "How dare you!")
+    4. SECOND, make a counter-accusation against ${lastSender} or someone else based on the scenario: ${
+      scenario || "General Holiday Chaos"
+    }.
+    5. Do NOT just ask a question. Defend yourself!
+
+    OUTPUT JSON MUST have "sender": "${currentResponder}"
+    `;
   } else {
-    prompt += `Generate one suspicious anonymous message accusing someone of something related to Christmas gifts, food, or traditions.`;
+    prompt += `Start a new drama thread based on the scenario: ${
+      scenario || "General Holiday Chaos"
+    }. Generate a message from one participant accusing another (or an anonymous rumor if in anonymous mode).`;
   }
 
   messages.push({
@@ -190,6 +227,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: messages,
+        temperature: 0.8, // Slightly reduced for better instruction following
         response_format: { type: "json_object" },
       }),
     });

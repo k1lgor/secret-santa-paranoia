@@ -6,6 +6,24 @@ import MessageDisplay from "./components/MessageDisplay";
 function App() {
   const [participants, setParticipants] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [scenario, setScenario] = useState("");
+
+  const scenarios = [
+    "Office Holiday Party 🎄👔",
+    "Christmas Eve Dinner 🦃🍷",
+    "Gift Exchange Gone Wrong 🎁🔥",
+    "Decorating the Tree 🎄✨",
+    "Cookie Baking Disaster 🍪🔥",
+    "The 'Anonymous' Complaint Box 📦👀",
+    "New Year's Eve Planning 🎆🥂",
+    "Snowed In at the Office ❄️🏢",
+  ];
+
+  React.useEffect(() => {
+    const randomScenario =
+      scenarios[Math.floor(Math.random() * scenarios.length)];
+    setScenario(randomScenario);
+  }, []);
 
   const addParticipant = (name) => {
     setParticipants([...participants, name]);
@@ -50,6 +68,22 @@ function App() {
         <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "1.1rem" }}>
           Making the holidays awkward, one text at a time.
         </p>
+        <div
+          style={{
+            marginTop: "1rem",
+            padding: "0.5rem 1rem",
+            background: "rgba(255, 255, 255, 0.1)",
+            borderRadius: "20px",
+            display: "inline-block",
+            backdropFilter: "blur(5px)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+          }}
+        >
+          <span style={{ color: "var(--accent-gold)", fontWeight: "bold" }}>
+            Scenario:
+          </span>{" "}
+          {scenario}
+        </div>
       </header>
 
       <main
@@ -70,6 +104,7 @@ function App() {
           participants={participants}
           onGenerate={addMessage}
           messages={messages}
+          scenario={scenario}
         />
 
         <MessageDisplay messages={messages} />

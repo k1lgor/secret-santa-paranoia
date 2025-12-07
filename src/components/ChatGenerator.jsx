@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { templates, items } from "../data/templates";
 
-const ChatGenerator = ({ participants, onGenerate, messages }) => {
+const ChatGenerator = ({ participants, onGenerate, messages, scenario }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const generateMessage = async () => {
@@ -27,7 +27,7 @@ const ChatGenerator = ({ participants, onGenerate, messages }) => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ participants, previousMessages }),
+          body: JSON.stringify({ participants, previousMessages, scenario }),
         }
       );
 
